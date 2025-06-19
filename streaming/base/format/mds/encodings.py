@@ -482,6 +482,30 @@ class JPEG(Encoding):
         return Image.open(inp)
 
 
+from typing import List
+# Streaming data type for encoding and decoding list of JPEG images
+class JPEGList(Encoding):
+    """Store a list of PIL images as JPEG in serialized bytes format."""
+    def __init__(self):
+        self.jpeg = JPEG()
+
+    def encode(self, obj: List[Image.Image]) -> bytes:
+        self._validate(obj, list)
+        for item in obj:
+            self._validate(item, Image.Image)
+        
+        # Encode each image to JPEG and serialize the list into a single bytes object
+        encoded_images = [self.jpeg.encode(image) for image in obj]
+        return pickle.dumps(encoded_images)  # Combine into a single bytes object
+
+    def decode(self, data: bytes) -> List[Image.Image]:
+        self._validate(data, bytes)
+        
+        # Deserialize the bytes object and decode each image
+        encoded_images = pickle.loads(data)
+        return [self.jpeg.decode(image_data) for image_data in encoded_images]
+
+
 class PNG(Encoding):
     """Store PIL image as PNG."""
 
@@ -549,6 +573,7 @@ _encodings = {
     'str_decimal': StrDecimal,
     'pil': PIL,
     'jpeg': JPEG,
+    'jpeg_list': JPEGList,
     'png': PNG,
     'pkl': Pickle,
     'json': JSON,
